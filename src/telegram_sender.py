@@ -4,6 +4,14 @@ from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_IDS
 
 def send_telegram_message(text: str, parse_mode: str = "Markdown") -> bool:
     """Send a message to all configured Telegram users."""
+    if not TELEGRAM_BOT_TOKEN:
+        print("  ERROR: TELEGRAM_BOT_TOKEN not configured!")
+        return False
+
+    if not TELEGRAM_CHAT_IDS:
+        print("  ERROR: No TELEGRAM_CHAT_ID(S) configured!")
+        return False
+
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     max_length = 4096
 
