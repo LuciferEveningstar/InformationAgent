@@ -6,7 +6,10 @@ load_dotenv()
 # API Keys
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+# Telegram Chat IDs - kommagetrennt für mehrere Empfänger
+_chat_ids_raw = os.getenv("TELEGRAM_CHAT_IDS", os.getenv("TELEGRAM_CHAT_ID", ""))
+TELEGRAM_CHAT_IDS = [cid.strip() for cid in _chat_ids_raw.split(",") if cid.strip()]
 
 # Gemini Models (kostenlose Modelle)
 GEMINI_FLASH_MODEL = "models/gemini-2.5-flash"
@@ -39,7 +42,7 @@ RSS_FEEDS = {
 # Prompts
 SUMMARY_PROMPT = """Fasse die folgenden Nachrichtenartikel kurz und prägnant auf Deutsch zusammen.
 Für jeden Artikel: 1-2 Sätze, die das Wichtigste erfassen.
-Behalte den Titel und füge die Zusammenfassung hinzu.
+WICHTIG: Behalte den Original-Link für jeden Artikel bei!
 
 Artikel:
 {articles}
@@ -47,6 +50,7 @@ Artikel:
 Format pro Artikel:
 **[Titel]**
 [Zusammenfassung in 1-2 Sätzen]
+[Link zum Artikel]
 """
 
 CURATE_PROMPT = """Du bist ein persönlicher News-Kurator. Erstelle aus den folgenden zusammengefassten News einen
@@ -56,28 +60,77 @@ Regeln:
 1. Wähle die wichtigsten und interessantesten Stories aus jeder Kategorie
 2. Schreibe auf Deutsch, klar und informativ
 3. Strukturiere nach Kategorien mit Emoji-Überschriften
-4. Füge am Ende einen kurzen "Ausblick" mit 1-2 Sätzen hinzu, was heute wichtig werden könnte
-5. Halte es kompakt aber informativ
+4. WICHTIG: Füge nach jeder Story den Link zum Original-Artikel ein
+5. Füge am Ende einen kurzen "Ausblick" mit 1-2 Sätzen hinzu, was heute wichtig werden könnte
+6. Halte es kompakt aber informativ
+7. GANZ AM ENDE: Füge ein TL;DR mit max 1 Minute Lesezeit hinzu - nur die absolut wichtigsten 3-4 Punkte über alle Kategorien
 
 Zusammengefasste News:
 {summaries}
 
 Erstelle den Digest im folgenden Format:
 
+*{timestamp}*
+
 *Guten Morgen! Hier dein News-Briefing:*
 
 *KI & Technologie*
-[News]
+[News mit Link]
 
 *SAP*
-[News]
+[News mit Link]
 
 *Deutsche Politik*
-[News]
+[News mit Link]
 
 *Internationale Politik*
-[News]
+[News mit Link]
 
 *Ausblick*
 [Was heute wichtig wird]
+
+*TL;DR (1 Min)*
+[Die 3-4 wichtigsten Punkte des Tages in Stichpunkten]
+"""
+
+WEEKLY_PROMPT = """Du bist ein persönlicher News-Kurator. Erstelle einen Wochenrückblick aus den folgenden News der letzten 7 Tage.
+
+Regeln:
+1. Fasse die wichtigsten Entwicklungen der Woche zusammen
+2. Schreibe auf Deutsch, klar und informativ
+3. Strukturiere nach Kategorien mit Emoji-Überschriften
+4. Füge Links zu den wichtigsten Artikeln ein
+5. Identifiziere Trends und wiederkehrende Themen
+6. Etwa 7-10 Minuten Lesezeit
+7. GANZ AM ENDE: Füge ein TL;DR mit max 1 Minute Lesezeit hinzu - nur die absolut wichtigsten 4-5 Punkte der Woche
+
+News der Woche:
+{summaries}
+
+Erstelle den Wochenrückblick im folgenden Format:
+
+*{timestamp}*
+
+*Wochenrückblick*
+
+*KI & Technologie*
+[Die wichtigsten Entwicklungen der Woche]
+
+*SAP*
+[Die wichtigsten Entwicklungen der Woche]
+
+*Deutsche Politik*
+[Die wichtigsten Entwicklungen der Woche]
+
+*Internationale Politik*
+[Die wichtigsten Entwicklungen der Woche]
+
+*Trends der Woche*
+[Wiederkehrende Themen und Muster]
+
+*Ausblick*
+[Was nächste Woche wichtig werden könnte]
+
+*TL;DR (1 Min)*
+[Die 4-5 wichtigsten Punkte der Woche in Stichpunkten]
 """

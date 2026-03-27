@@ -5,12 +5,12 @@ from typing import Dict, List
 from config import RSS_FEEDS
 
 
-def fetch_single_feed(url: str) -> List[dict]:
+def fetch_single_feed(url: str, hours: int = 24) -> List[dict]:
     """Fetch articles from a single RSS feed."""
     try:
         feed = feedparser.parse(url)
         articles = []
-        cutoff = datetime.now() - timedelta(hours=24)
+        cutoff = datetime.now() - timedelta(hours=hours)
 
         for entry in feed.entries[:10]:  # Max 10 per feed
             published = None
@@ -36,7 +36,7 @@ def fetch_single_feed(url: str) -> List[dict]:
         return []
 
 
-def fetch_all_news() -> Dict[str, List[dict]]:
+def fetch_all_news(hours: int = 24) -> Dict[str, List[dict]]:
     """Fetch news from all RSS feeds, organized by category."""
     categorized_news = {}
 
@@ -44,7 +44,7 @@ def fetch_all_news() -> Dict[str, List[dict]]:
         category_articles = []
 
         with ThreadPoolExecutor(max_workers=5) as executor:
-            future_to_url = {executor.submit(fetch_single_feed, url): url for url in urls}
+            future_to_url = {executor.submit(fetch_single_feed, url, hours): url for url in urls}
 
             for future in as_completed(future_to_url):
                 articles = future.result()
@@ -59,7 +59,9 @@ def fetch_all_news() -> Dict[str, List[dict]]:
                 seen_titles.add(title_lower)
                 unique_articles.append(article)
 
-        categorized_news[category] = unique_articles[:5]  # Top 5 per category
+        # More articles for weekly digest
+        max_articles = 10 if hours > 24 else 5
+        categorized_news[category] = unique_articles[:max_articles]
 
     return categorized_news
 

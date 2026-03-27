@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from google import genai
 from google.genai import types
 from typing import Dict, List
@@ -8,10 +9,23 @@ from config import (
     GEMINI_PRO_MODEL,
     SUMMARY_PROMPT,
     CURATE_PROMPT,
+    WEEKLY_PROMPT,
 )
 from news_fetcher import format_articles_for_summary
 
 client = genai.Client(api_key=GOOGLE_API_KEY)
+
+
+def _get_timestamp(weekly: bool = False) -> str:
+    """Generate timestamp string for the digest."""
+    now = datetime.now()
+    weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+    weekday = weekdays[now.weekday()]
+    date_str = now.strftime("%d.%m.%Y")
+
+    if weekly:
+        return f"Wochenrückblick - {weekday}, {date_str}"
+    return f"{weekday}, {date_str} - {now.strftime('%H:%M')} Uhr"
 
 
 def _generate_with_retry(model: str, prompt: str, max_retries: int = 3) -> str:
@@ -62,16 +76,19 @@ def summarize_all_categories(categorized_news: Dict[str, List[dict]]) -> str:
     return "\n".join(summaries)
 
 
-def curate_digest(summaries: str) -> str:
+def curate_digest(summaries: str, weekly: bool = False) -> str:
     """Create the final curated digest using Gemini Pro."""
-    prompt = CURATE_PROMPT.format(summaries=summaries)
+    prompt_template = WEEKLY_PROMPT if weekly else CURATE_PROMPT
+    timestamp = _get_timestamp(weekly)
+    prompt = prompt_template.format(summaries=summaries, timestamp=timestamp)
 
     try:
         response = _generate_with_retry(GEMINI_PRO_MODEL, prompt)
         return response
     except Exception as e:
         print(f"Error curating digest: {e}")
-        return f"*Dein Morgen-Briefing*\n\n{summaries}"
+        header = f"*{timestamp}*\n\n*Wochenrückblick*" if weekly else f"*{timestamp}*\n\n*Dein Morgen-Briefing*"
+        return f"{header}\n\n{summaries}"
 
 
 if __name__ == "__main__":

@@ -1,22 +1,13 @@
-name: Daily News Digest
+name: Weekly News Digest
 
 on:
   schedule:
-    # 7:00 UTC = 8:00 MEZ (Winterzeit) / 9:00 MESZ (Sommerzeit)
-    - cron: '0 7 * * *'
+    # Sonntag 9:00 UTC = 10:00 MEZ / 11:00 MESZ
+    - cron: '0 9 * * 0'
   workflow_dispatch:
-    inputs:
-      weekly:
-        description: 'Generate weekly digest'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - 'false'
-          - 'true'
 
 jobs:
-  send-news:
+  send-weekly:
     runs-on: ubuntu-latest
 
     steps:
@@ -33,15 +24,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run news agent
+      - name: Run weekly news agent
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           cd src
-          if [ "${{ github.event.inputs.weekly }}" = "true" ]; then
-            python main.py --weekly
-          else
-            python main.py
-          fi
+          python main.py --weekly
