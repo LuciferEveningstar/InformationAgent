@@ -11,9 +11,13 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 _chat_ids_raw = os.getenv("TELEGRAM_CHAT_IDS", os.getenv("TELEGRAM_CHAT_ID", ""))
 TELEGRAM_CHAT_IDS = [cid.strip() for cid in _chat_ids_raw.split(",") if cid.strip()]
 
-# Gemini Models (kostenlose Modelle)
-GEMINI_FLASH_MODEL = "models/gemini-2.5-flash"
-GEMINI_PRO_MODEL = "models/gemini-2.5-flash"  # Flash für alles, Pro hat kein Free-Tier Quota
+# Gemini Models (kostenlose Modelle) - Fallback-Reihenfolge bei Rate Limits
+GEMINI_MODELS = [
+    "models/gemini-2.5-flash",
+    "models/gemini-2.5-flash-lite",
+    "models/gemini-3-flash",
+    "models/gemini-3.1-flash-lite",
+]
 
 # RSS Feeds nach Kategorie
 RSS_FEEDS = {
