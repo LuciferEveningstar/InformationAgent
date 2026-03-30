@@ -49,11 +49,18 @@ def _send_single_message(url: str, text: str, parse_mode: str, chat_id: str) -> 
             return True
         else:
             print(f"  Telegram API error for {chat_id}: {response.status_code}")
-            if "parse" in response.text.lower() and parse_mode:
+            print(f"  Response: {response.text[:200]}")
+
+            # Retry without markdown for any 400 error (often markdown parsing issues)
+            if response.status_code == 400 and parse_mode:
                 print("  Retrying without markdown...")
                 payload["parse_mode"] = None
                 retry = requests.post(url, json=payload, timeout=30)
-                return retry.status_code == 200
+                if retry.status_code == 200:
+                    print(f"  Message sent to {chat_id} (plain text)!")
+                    return True
+                else:
+                    print(f"  Retry also failed: {retry.status_code} - {retry.text[:200]}")
             return False
     except Exception as e:
         print(f"  Error sending to {chat_id}: {e}")
