@@ -23,3 +23,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Context for Claude sessions
+CONTEXT.md

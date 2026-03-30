@@ -41,6 +41,12 @@ RSS_FEEDS = {
         "https://feeds.bbci.co.uk/news/world/rss.xml",
         "https://www.theguardian.com/world/rss",
     ],
+    "Wirtschaft": [
+        "https://www.handelsblatt.com/contentexport/feed/top-themen",
+        "https://www.manager-magazin.de/wirtschaft/index.rss",
+        "https://www.wiwo.de/rss/schlagzeilen.rss",
+        "https://www.faz.net/rss/aktuell/wirtschaft/",
+    ],
 }
 
 # Prompts
@@ -90,6 +96,9 @@ Erstelle den Digest im folgenden Format:
 *Internationale Politik*
 [News mit Link]
 
+*Wirtschaft*
+[News mit Link]
+
 *Ausblick*
 [Was heute wichtig wird]
 
@@ -127,6 +136,9 @@ Erstelle den Wochenrückblick im folgenden Format:
 [Die wichtigsten Entwicklungen der Woche]
 
 *Internationale Politik*
+[Die wichtigsten Entwicklungen der Woche]
+
+*Wirtschaft*
 [Die wichtigsten Entwicklungen der Woche]
 
 *Trends der Woche*
