@@ -54,7 +54,7 @@ def _send_single_message(url: str, text: str, parse_mode: str, chat_id: str) -> 
             # Retry without markdown for any 400 error (often markdown parsing issues)
             if response.status_code == 400 and parse_mode:
                 print("  Retrying without markdown...")
-                payload["parse_mode"] = None
+                del payload["parse_mode"]
                 retry = requests.post(url, json=payload, timeout=30)
                 if retry.status_code == 200:
                     print(f"  Message sent to {chat_id} (plain text)!")
