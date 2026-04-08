@@ -45,6 +45,18 @@ def _get_timestamp(weekly: bool = False) -> str:
     return f"{weekday}, {date_str} - {now.strftime('%H:%M')} Uhr"
 
 
+def _get_weather() -> str:
+    """Get weather forecast for Walldorf."""
+    try:
+        from weather_fetcher import get_weather_walldorf, get_pollen_forecast
+        weather = get_weather_walldorf()
+        pollen = get_pollen_forecast()
+        return f"{weather}\n{pollen}"
+    except Exception as e:
+        print(f"Error fetching weather: {e}")
+        return "Wetter: Keine Daten verfügbar"
+
+
 def _generate_with_retry(prompt: str, max_retries: int = 3) -> str:
     """Generate content with retry logic and model fallback for rate limits."""
     global _current_model_index
@@ -120,6 +132,12 @@ def curate_digest(summaries: str, weekly: bool = False) -> str:
     """Create the final curated digest using Gemini Pro."""
     prompt_template = WEEKLY_PROMPT if weekly else CURATE_PROMPT
     timestamp = _get_timestamp(weekly)
+
+    # Add weather forecast for daily digest
+    if not weekly:
+        weather = _get_weather()
+        timestamp = f"{timestamp}\n{weather}"
+
     prompt = prompt_template.format(summaries=summaries, timestamp=timestamp)
 
     try:

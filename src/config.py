@@ -64,7 +64,7 @@ Artikel:
 Format pro Artikel:
 **[Titel]**
 [Zusammenfassung in 1-2 Sätzen]
-[Link zum Artikel]
+[Link](URL)
 """
 
 CURATE_PROMPT = """Du bist ein persönlicher News-Kurator. Erstelle aus den folgenden zusammengefassten News einen
@@ -74,10 +74,11 @@ Regeln:
 1. Wähle die wichtigsten und interessantesten Stories aus jeder Kategorie
 2. Schreibe auf Deutsch, klar und informativ
 3. Strukturiere nach Kategorien mit Emoji-Überschriften
-4. WICHTIG: Füge nach jeder Story den Link zum Original-Artikel ein
+4. WICHTIG: Füge nach jeder Story den Link zum Original-Artikel als Markdown-Link ein: [Link](URL)
 5. Füge am Ende einen kurzen "Ausblick" mit 1-2 Sätzen hinzu, was heute wichtig werden könnte
 6. Halte es kompakt aber informativ
 7. GANZ AM ENDE: Füge ein TL;DR mit max 1 Minute Lesezeit hinzu - nur die absolut wichtigsten 3-4 Punkte über alle Kategorien
+8. Verwende **fett** für Kategorieüberschriften (z.B. **🤖 KI & Technologie**)
 
 Zusammengefasste News:
 {summaries}
@@ -88,25 +89,25 @@ Erstelle den Digest im folgenden Format:
 
 *Guten Morgen! Hier dein News-Briefing:*
 
-*KI & Technologie*
-[News mit Link]
+**🤖 KI & Technologie**
+[News-Titel]: [Zusammenfassung] [Link](URL)
 
-*SAP*
-[News mit Link]
+**🏢 SAP**
+[News-Titel]: [Zusammenfassung] [Link](URL)
 
-*Deutsche Politik*
-[News mit Link]
+**🇩🇪 Deutsche Politik**
+[News-Titel]: [Zusammenfassung] [Link](URL)
 
-*Internationale Politik*
-[News mit Link]
+**🌍 Internationale Politik**
+[News-Titel]: [Zusammenfassung] [Link](URL)
 
-*Wirtschaft*
-[News mit Link]
+**💼 Wirtschaft**
+[News-Titel]: [Zusammenfassung] [Link](URL)
 
-*Ausblick*
+**🔮 Ausblick**
 [Was heute wichtig wird]
 
-*TL;DR (1 Min)*
+**📌 TL;DR (1 Min)**
 [Die 3-4 wichtigsten Punkte des Tages in Stichpunkten]
 """
 
@@ -116,10 +117,11 @@ Regeln:
 1. Fasse die wichtigsten Entwicklungen der Woche zusammen
 2. Schreibe auf Deutsch, klar und informativ
 3. Strukturiere nach Kategorien mit Emoji-Überschriften
-4. Füge Links zu den wichtigsten Artikeln ein
+4. WICHTIG: Füge Links zu den wichtigsten Artikeln als Markdown-Links ein: [Link](URL)
 5. Identifiziere Trends und wiederkehrende Themen
 6. Etwa 7-10 Minuten Lesezeit
 7. GANZ AM ENDE: Füge ein TL;DR mit max 1 Minute Lesezeit hinzu - nur die absolut wichtigsten 4-5 Punkte der Woche
+8. Verwende **fett** für Kategorieüberschriften (z.B. **🤖 KI & Technologie**)
 
 News der Woche:
 {summaries}
@@ -130,27 +132,27 @@ Erstelle den Wochenrückblick im folgenden Format:
 
 *Wochenrückblick*
 
-*KI & Technologie*
-[Die wichtigsten Entwicklungen der Woche]
+**🤖 KI & Technologie**
+[Die wichtigsten Entwicklungen der Woche] [Link](URL)
 
-*SAP*
-[Die wichtigsten Entwicklungen der Woche]
+**🏢 SAP**
+[Die wichtigsten Entwicklungen der Woche] [Link](URL)
 
-*Deutsche Politik*
-[Die wichtigsten Entwicklungen der Woche]
+**🇩🇪 Deutsche Politik**
+[Die wichtigsten Entwicklungen der Woche] [Link](URL)
 
-*Internationale Politik*
-[Die wichtigsten Entwicklungen der Woche]
+**🌍 Internationale Politik**
+[Die wichtigsten Entwicklungen der Woche] [Link](URL)
 
-*Wirtschaft*
-[Die wichtigsten Entwicklungen der Woche]
+**💼 Wirtschaft**
+[Die wichtigsten Entwicklungen der Woche] [Link](URL)
 
-*Trends der Woche*
+**📊 Trends der Woche**
 [Wiederkehrende Themen und Muster]
 
-*Ausblick*
+**🔮 Ausblick**
 [Was nächste Woche wichtig werden könnte]
 
-*TL;DR (1 Min)*
+**📌 TL;DR (1 Min)**
 [Die 4-5 wichtigsten Punkte der Woche in Stichpunkten]
 """
