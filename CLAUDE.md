@@ -4,18 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Daily news agent that fetches articles from RSS feeds, summarizes them with Google Gemini AI, and sends curated digests via Telegram. Runs automatically via GitHub Actions at 7:00 UTC daily.
+Daily news agent that fetches articles from RSS feeds, summarizes them with Google Gemini AI, and sends curated digests via Telegram. Includes optional Google Calendar integration for daily agenda. Runs automatically via GitHub Actions at 6:00 UTC daily.
 
 ## Architecture
 
-Four-stage pipeline orchestrated by `src/main.py`:
+Five-stage pipeline orchestrated by `src/main.py`:
 
 1. **News Fetching** (`news_fetcher.py`) - Parallel RSS feed fetching with ThreadPoolExecutor, deduplication, date filtering
-2. **Summarization** (`summarizer.py`) - Gemini API calls with automatic model fallback on rate limits
-3. **Curation** (`summarizer.py`) - Final digest assembly with timestamp and formatting
-4. **Delivery** (`telegram_sender.py`) - Telegram Bot API with automatic markdown fallback on 400 errors
+2. **Weather & Pollen** (`weather_fetcher.py`) - wttr.in for weather, DWD OpenData for pollen forecast (Walldorf region)
+3. **Calendar** (`calendar_fetcher.py`) - Google Calendar API via Service Account, shows today's events
+4. **Summarization** (`summarizer.py`) - Gemini API calls with automatic model fallback on rate limits
+5. **Delivery** (`telegram_sender.py`) - Telegram Bot API with automatic HTML fallback on 400 errors
 
-Configuration in `config.py`: API keys, RSS feed categories, Gemini models, prompts (summary/curation/weekly).
+Configuration in `config.py`: API keys, RSS feed categories, Gemini models, prompts (summary/curation/weekly), calendar settings.
 
 ## Running Locally
 
@@ -34,16 +35,26 @@ cd src && python main.py
 cd src && python main.py --weekly
 
 # Test individual components
-cd src && python news_fetcher.py  # Fetch only
-cd src && python summarizer.py    # Fetch + summarize
-cd src && python telegram_sender.py  # Send test message
+cd src && python news_fetcher.py      # Fetch only
+cd src && python summarizer.py        # Fetch + summarize
+cd src && python telegram_sender.py   # Send test message
+cd src && python calendar_fetcher.py  # Test calendar (requires service_account.json)
+cd src && python test_calendar.py     # Send calendar via Telegram
 ```
 
 ## GitHub Actions
 
-- `.github/workflows/daily_news.yml` - Daily digest at 7:00 UTC (cron + manual trigger)
+- `.github/workflows/daily_news.yml` - Daily digest at 6:00 UTC (cron + manual trigger)
 - `.github/workflows/weekly_news.yml` - Weekly digest (manual trigger only)
-- Required secrets: `GOOGLE_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
+
+### Required Secrets
+
+| Secret | Beschreibung |
+|--------|--------------|
+| `GOOGLE_API_KEY` | Gemini API Key |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token |
+| `TELEGRAM_CHAT_ID` | Telegram Chat ID(s) |
+| `GOOGLE_CALENDAR_CREDENTIALS` | Service Account JSON (optional, für Kalender) |
 
 Note: Use singular `TELEGRAM_CHAT_ID` in GitHub secrets, but code supports `TELEGRAM_CHAT_IDS` (comma-separated) for multiple recipients in local `.env`.
 
@@ -73,7 +84,9 @@ Global `_current_model_index` persists across API calls within same run. On 429/
 
 **Rate limit exhaustion**: All 4 Gemini models depleted = exception thrown. Occurs if >20 requests/model used that day. Wait 24h or use paid API.
 
-**Markdown parsing errors**: Automatic fallback to plain text. If persistent, check prompt templates in `config.py` for invalid Telegram markdown syntax.
+**Markdown parsing errors**: Automatic fallback to plain text. If persistent, check prompt templates in `config.py` for invalid Telegram HTML syntax.
+
+**Calendar shows no events**: Service Account muss explizit zum Kalender eingeladen werden UND `CALENDAR_ID` muss die richtige Email-Adresse sein (nicht "primary").
 
 ## Code Conventions
 
@@ -84,46 +97,18 @@ Global `_current_model_index` persists across API calls within same run. On 429/
 
 ## Google Calendar Integration (Optional)
 
-Die Calendar-Integration zeigt deine Termine im Morgen-Digest an. Sie ist standardmäßig deaktiviert und nutzt einen Google Service Account.
+Zeigt heutige Termine im Morgen-Digest an. Automatisch aktiviert wenn Credentials vorhanden sind.
 
 ### Setup
 
-1. **Google Cloud Project**
-   - Gehe zu https://console.cloud.google.com/
-   - Erstelle ein neues Projekt oder wähle ein bestehendes
-   - Aktiviere die "Google Calendar API" unter APIs & Services > Library
+1. **Google Cloud Console**: Neues Projekt erstellen, "Google Calendar API" aktivieren
+2. **Service Account**: APIs & Services > Credentials > Create Credentials > Service Account > JSON Key erstellen
+3. **Kalender freigeben**: In Google Calendar die Service Account Email (`NAME@PROJECT-ID.iam.gserviceaccount.com`) hinzufügen mit "Alle Termindetails anzeigen"
+4. **Lokal**: JSON als `service_account.json` im Projekt-Root speichern
+5. **GitHub Actions**: Gesamten JSON-Inhalt als Secret `GOOGLE_CALENDAR_CREDENTIALS` anlegen
 
-2. **Service Account erstellen**
-   - Gehe zu APIs & Services > Credentials
-   - Klicke "Create Credentials" > "Service Account"
-   - Name vergeben, Rolle "Viewer" reicht
-   - Unter "Keys" einen neuen JSON Key erstellen und herunterladen
+### Wichtig
 
-3. **Kalender für Service Account freigeben**
-   - Öffne Google Calendar (calendar.google.com)
-   - Einstellungen des gewünschten Kalenders öffnen
-   - Unter "Für bestimmte Personen freigeben" die Service Account Email hinzufügen
-   - Email-Format: `NAME@PROJECT-ID.iam.gserviceaccount.com`
-
-4. **Lokale Nutzung**
-   - Service Account JSON als `service_account.json` im Projekt-Root speichern
-   - In `.env`: `CALENDAR_ENABLED=true`
-
-5. **GitHub Actions**
-   - Neues Secret `GOOGLE_CALENDAR_CREDENTIALS` erstellen
-   - Den **gesamten Inhalt** der Service Account JSON als Wert einfügen
-   - In Workflow: `GOOGLE_CALENDAR_CREDENTIALS: ${{ secrets.GOOGLE_CALENDAR_CREDENTIALS }}`
-
-### GitHub Actions Secrets (Zusammenfassung)
-
-| Secret | Beschreibung |
-|--------|--------------|
-| `GOOGLE_API_KEY` | Gemini API Key |
-| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token |
-| `TELEGRAM_CHAT_ID` | Telegram Chat ID(s) |
-| `GOOGLE_CALENDAR_CREDENTIALS` | **Neu**: Gesamte Service Account JSON |
-| `CALENDAR_ENABLED` | **Neu**: `true` zum Aktivieren |
-
-### Sicherheit
-
-**WICHTIG**: `service_account.json` ist in `.gitignore` und darf NIEMALS committed werden!
+- `CALENDAR_ID` in `calendar_fetcher.py` muss die Email-Adresse des freigegebenen Kalenders sein (nicht "primary")
+- Service Accounts haben einen eigenen leeren Kalender — sie sehen nur explizit freigegebene Kalender
+- `service_account.json` ist in `.gitignore` und darf NIEMALS committed werden
