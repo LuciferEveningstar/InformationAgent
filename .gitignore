@@ -2,6 +2,11 @@
 .env
 .env.local
 
+# Google Calendar Credentials (SENSITIVE!)
+credentials.json
+token.json
+service_account.json
+
 # Python
 __pycache__/
 *.py[cod]

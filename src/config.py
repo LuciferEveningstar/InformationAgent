@@ -161,3 +161,7 @@ Erstelle den Wochenrückblick im folgenden Format:
 <b>📌 TL;DR (1 Min)</b>
 [Die 4-5 wichtigsten Punkte der Woche in Stichpunkten]
 """
+
+# Google Calendar Einstellungen
+# Aktiviert wenn GOOGLE_CALENDAR_CREDENTIALS gesetzt ist
+CALENDAR_ENABLED = bool(os.getenv("GOOGLE_CALENDAR_CREDENTIALS"))

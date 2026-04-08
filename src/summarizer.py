@@ -9,6 +9,7 @@ from config import (
     SUMMARY_PROMPT,
     CURATE_PROMPT,
     WEEKLY_PROMPT,
+    CALENDAR_ENABLED,
 )
 from news_fetcher import format_articles_for_summary
 
@@ -55,6 +56,18 @@ def _get_weather() -> str:
     except Exception as e:
         print(f"Error fetching weather: {e}")
         return "Wetter: Keine Daten verfügbar"
+
+
+def _get_calendar(weekly: bool = False) -> str:
+    """Get calendar events for today or the week."""
+    if not CALENDAR_ENABLED:
+        return ""
+    try:
+        from calendar_fetcher import get_calendar_digest
+        return get_calendar_digest(weekly=weekly)
+    except Exception as e:
+        print(f"Error fetching calendar: {e}")
+        return ""
 
 
 def _generate_with_retry(prompt: str, max_retries: int = 3) -> str:
@@ -137,6 +150,11 @@ def curate_digest(summaries: str, weekly: bool = False) -> str:
     if not weekly:
         weather = _get_weather()
         timestamp = f"{timestamp}\n{weather}"
+
+    # Add calendar events
+    calendar = _get_calendar(weekly=weekly)
+    if calendar:
+        timestamp = f"{timestamp}\n\n{calendar}"
 
     prompt = prompt_template.format(summaries=summaries, timestamp=timestamp)
 
