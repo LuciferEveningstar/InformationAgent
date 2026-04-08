@@ -61,10 +61,13 @@ def _get_weather() -> str:
 def _get_calendar(weekly: bool = False) -> str:
     """Get calendar events for today or the week."""
     if not CALENDAR_ENABLED:
+        print("  Calendar disabled (no credentials found)")
         return ""
     try:
         from calendar_fetcher import get_calendar_digest
-        return get_calendar_digest(weekly=weekly)
+        result = get_calendar_digest(weekly=weekly)
+        print(f"  Calendar result: {result[:50] if result else 'empty'}...")
+        return result
     except Exception as e:
         print(f"Error fetching calendar: {e}")
         return ""

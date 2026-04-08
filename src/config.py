@@ -163,5 +163,7 @@ Erstelle den Wochenrückblick im folgenden Format:
 """
 
 # Google Calendar Einstellungen
-# Aktiviert wenn GOOGLE_CALENDAR_CREDENTIALS gesetzt ist
-CALENDAR_ENABLED = bool(os.getenv("GOOGLE_CALENDAR_CREDENTIALS"))
+# Aktiviert wenn GOOGLE_CALENDAR_CREDENTIALS gesetzt ist ODER service_account.json existiert
+_calendar_creds_env = bool(os.getenv("GOOGLE_CALENDAR_CREDENTIALS"))
+_calendar_creds_file = os.path.exists(os.path.join(os.path.dirname(__file__), "..", "service_account.json"))
+CALENDAR_ENABLED = _calendar_creds_env or _calendar_creds_file
