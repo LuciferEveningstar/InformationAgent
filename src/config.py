@@ -72,6 +72,9 @@ Morgen-Digest mit etwa 5 Minuten Lesezeit.
 
 Regeln:
 1. Wähle die wichtigsten und interessantesten Stories aus jeder Kategorie
+   - **KI & Technologie**: Priorisiere: Neue Modelle/Produkte, technische Durchbrüche, Forschungsergebnisse, Funding/Acquisitions, Regulierung, Enterprise-Ankündigungen
+   - VERMEIDE: Meinungsartikel, Clickbait, reine Spekulation, "AI wird alles verändern"-Takes
+   - Zeige MINDESTENS 4-6 substantielle KI-News (neue Releases, Forschung, Business-News)
 2. Schreibe auf Deutsch, klar und informativ
 3. Strukturiere nach Kategorien mit Emoji-Überschriften
 4. WICHTIG: Füge nach jeder Story den Link zum Original-Artikel als HTML-Link ein: <a href="URL">Link</a>
