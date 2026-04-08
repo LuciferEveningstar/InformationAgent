@@ -2,7 +2,7 @@ import requests
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_IDS
 
 
-def send_telegram_message(text: str, parse_mode: str = "Markdown") -> bool:
+def send_telegram_message(text: str, parse_mode: str = "HTML") -> bool:
     """Send a message to all configured Telegram users."""
     if not TELEGRAM_BOT_TOKEN:
         print("  ERROR: TELEGRAM_BOT_TOKEN not configured!")

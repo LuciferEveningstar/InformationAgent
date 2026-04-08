@@ -64,7 +64,7 @@ Artikel:
 Format pro Artikel:
 **[Titel]**
 [Zusammenfassung in 1-2 Sätzen]
-[Link](URL)
+<a href="URL">Link</a>
 """
 
 CURATE_PROMPT = """Du bist ein persönlicher News-Kurator. Erstelle aus den folgenden zusammengefassten News einen
@@ -74,40 +74,41 @@ Regeln:
 1. Wähle die wichtigsten und interessantesten Stories aus jeder Kategorie
 2. Schreibe auf Deutsch, klar und informativ
 3. Strukturiere nach Kategorien mit Emoji-Überschriften
-4. WICHTIG: Füge nach jeder Story den Link zum Original-Artikel als Markdown-Link ein: [Link](URL)
+4. WICHTIG: Füge nach jeder Story den Link zum Original-Artikel als HTML-Link ein: <a href="URL">Link</a>
 5. Füge am Ende einen kurzen "Ausblick" mit 1-2 Sätzen hinzu, was heute wichtig werden könnte
 6. Halte es kompakt aber informativ
 7. GANZ AM ENDE: Füge ein TL;DR mit max 1 Minute Lesezeit hinzu - nur die absolut wichtigsten 3-4 Punkte über alle Kategorien
-8. Verwende **fett** für Kategorieüberschriften (z.B. **🤖 KI & Technologie**)
+8. Verwende <b>fett</b> für Kategorieüberschriften (z.B. <b>🤖 KI & Technologie</b>)
+9. Verwende <i>kursiv</i> für Hervorhebungen
 
 Zusammengefasste News:
 {summaries}
 
 Erstelle den Digest im folgenden Format:
 
-*{timestamp}*
+<i>{timestamp}</i>
 
-*Guten Morgen! Hier dein News-Briefing:*
+<i>Guten Morgen! Hier dein News-Briefing:</i>
 
-**🤖 KI & Technologie**
-[News-Titel]: [Zusammenfassung] [Link](URL)
+<b>🤖 KI & Technologie</b>
+[News-Titel]: [Zusammenfassung] <a href="URL">Link</a>
 
-**🏢 SAP**
-[News-Titel]: [Zusammenfassung] [Link](URL)
+<b>🏢 SAP</b>
+[News-Titel]: [Zusammenfassung] <a href="URL">Link</a>
 
-**🇩🇪 Deutsche Politik**
-[News-Titel]: [Zusammenfassung] [Link](URL)
+<b>🇩🇪 Deutsche Politik</b>
+[News-Titel]: [Zusammenfassung] <a href="URL">Link</a>
 
-**🌍 Internationale Politik**
-[News-Titel]: [Zusammenfassung] [Link](URL)
+<b>🌍 Internationale Politik</b>
+[News-Titel]: [Zusammenfassung] <a href="URL">Link</a>
 
-**💼 Wirtschaft**
-[News-Titel]: [Zusammenfassung] [Link](URL)
+<b>💼 Wirtschaft</b>
+[News-Titel]: [Zusammenfassung] <a href="URL">Link</a>
 
-**🔮 Ausblick**
+<b>🔮 Ausblick</b>
 [Was heute wichtig wird]
 
-**📌 TL;DR (1 Min)**
+<b>📌 TL;DR (1 Min)</b>
 [Die 3-4 wichtigsten Punkte des Tages in Stichpunkten]
 """
 
@@ -117,42 +118,43 @@ Regeln:
 1. Fasse die wichtigsten Entwicklungen der Woche zusammen
 2. Schreibe auf Deutsch, klar und informativ
 3. Strukturiere nach Kategorien mit Emoji-Überschriften
-4. WICHTIG: Füge Links zu den wichtigsten Artikeln als Markdown-Links ein: [Link](URL)
+4. WICHTIG: Füge Links zu den wichtigsten Artikeln als HTML-Links ein: <a href="URL">Link</a>
 5. Identifiziere Trends und wiederkehrende Themen
 6. Etwa 7-10 Minuten Lesezeit
 7. GANZ AM ENDE: Füge ein TL;DR mit max 1 Minute Lesezeit hinzu - nur die absolut wichtigsten 4-5 Punkte der Woche
-8. Verwende **fett** für Kategorieüberschriften (z.B. **🤖 KI & Technologie**)
+8. Verwende <b>fett</b> für Kategorieüberschriften (z.B. <b>🤖 KI & Technologie</b>)
+9. Verwende <i>kursiv</i> für Hervorhebungen
 
 News der Woche:
 {summaries}
 
 Erstelle den Wochenrückblick im folgenden Format:
 
-*{timestamp}*
+<i>{timestamp}</i>
 
-*Wochenrückblick*
+<i>Wochenrückblick</i>
 
-**🤖 KI & Technologie**
-[Die wichtigsten Entwicklungen der Woche] [Link](URL)
+<b>🤖 KI & Technologie</b>
+[Die wichtigsten Entwicklungen der Woche] <a href="URL">Link</a>
 
-**🏢 SAP**
-[Die wichtigsten Entwicklungen der Woche] [Link](URL)
+<b>🏢 SAP</b>
+[Die wichtigsten Entwicklungen der Woche] <a href="URL">Link</a>
 
-**🇩🇪 Deutsche Politik**
-[Die wichtigsten Entwicklungen der Woche] [Link](URL)
+<b>🇩🇪 Deutsche Politik</b>
+[Die wichtigsten Entwicklungen der Woche] <a href="URL">Link</a>
 
-**🌍 Internationale Politik**
-[Die wichtigsten Entwicklungen der Woche] [Link](URL)
+<b>🌍 Internationale Politik</b>
+[Die wichtigsten Entwicklungen der Woche] <a href="URL">Link</a>
 
-**💼 Wirtschaft**
-[Die wichtigsten Entwicklungen der Woche] [Link](URL)
+<b>💼 Wirtschaft</b>
+[Die wichtigsten Entwicklungen der Woche] <a href="URL">Link</a>
 
-**📊 Trends der Woche**
+<b>📊 Trends der Woche</b>
 [Wiederkehrende Themen und Muster]
 
-**🔮 Ausblick**
+<b>🔮 Ausblick</b>
 [Was nächste Woche wichtig werden könnte]
 
-**📌 TL;DR (1 Min)**
+<b>📌 TL;DR (1 Min)</b>
 [Die 4-5 wichtigsten Punkte der Woche in Stichpunkten]
 """
