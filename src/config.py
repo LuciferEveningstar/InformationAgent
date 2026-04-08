@@ -26,6 +26,10 @@ RSS_FEEDS = {
         "https://techcrunch.com/category/artificial-intelligence/feed/",
         "https://www.technologyreview.com/feed/",
         "https://feeds.arstechnica.com/arstechnica/technology-lab",
+        "https://blog.google/technology/ai/rss/",
+        "https://openai.com/blog/rss.xml",
+        "https://www.anthropic.com/news/rss.xml",
+        "https://venturebeat.com/category/ai/feed/",
     ],
     "SAP": [
         "https://news.sap.com/feed/",
