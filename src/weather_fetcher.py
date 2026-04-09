@@ -6,7 +6,8 @@ def get_weather_walldorf() -> str:
     try:
         # wttr.in provides free weather data without API key
         # format=3 gives compact output like "Walldorf: ⛅️ +15°C"
-        url = "https://wttr.in/Walldorf,Germany?format=%l:+%c+%t+(gefühlt:+%f),+%w,+%h"
+        # ?m forces metric units (Celsius)
+        url = "https://wttr.in/Walldorf,Germany?m&format=%l:+%c+%t+(gefühlt:+%f),+%w,+%h"
         response = requests.get(url, timeout=10)
         response.raise_for_status()
 
