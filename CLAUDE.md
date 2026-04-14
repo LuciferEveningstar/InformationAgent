@@ -4,17 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Daily news agent that fetches articles from RSS feeds, summarizes them with OpenRouter API (MiniMax M2.7), and sends curated digests via Telegram. Includes optional Google Calendar integration for daily agenda. Runs automatically via GitHub Actions at 6:00 UTC daily.
+Daily news agent that fetches articles from RSS feeds, summarizes them with OpenRouter API (MiniMax M2.7), and sends curated digests via Telegram. Includes market data, weather, pollen forecast, and optional Google Calendar integration. Runs automatically via GitHub Actions at 4:00 UTC daily.
 
 ## Architecture
 
-Five-stage pipeline orchestrated by `src/main.py`:
+Six-stage pipeline orchestrated by `src/main.py`:
 
 1. **News Fetching** (`news_fetcher.py`) - Parallel RSS feed fetching with ThreadPoolExecutor, deduplication, date filtering
-2. **Weather & Pollen** (`weather_fetcher.py`) - wttr.in for weather, DWD OpenData for pollen forecast (Walldorf region)
-3. **Calendar** (`calendar_fetcher.py`) - Google Calendar API via Service Account, shows today's events
-4. **Summarization** (`summarizer.py`) - OpenRouter API (MiniMax M2.7) with retry logic
-5. **Delivery** (`telegram_sender.py`) - Telegram Bot API with automatic HTML fallback on 400 errors
+2. **Market Data** (`market_fetcher.py`) - DAX, S&P 500, EUR/USD via yfinance with daily change
+3. **Weather & Pollen** (`weather_fetcher.py`) - wttr.in for weather, DWD OpenData for pollen score (0-10)
+4. **Calendar** (`calendar_fetcher.py`) - Google Calendar API via Service Account, shows today's events + weekly preview on Sundays
+5. **Summarization** (`summarizer.py`) - OpenRouter API (MiniMax M2.7) with retry logic
+6. **Delivery** (`telegram_sender.py`) - Telegram Bot API with automatic HTML fallback on 400 errors
 
 Configuration in `config.py`: API keys, RSS feed categories, OpenRouter model, prompts (summary/curation/weekly), calendar settings.
 
@@ -41,12 +42,13 @@ cd src && python telegram_sender.py   # Send test message
 cd src && python calendar_fetcher.py  # Test calendar (requires service_account.json)
 cd src && python test_calendar.py     # Send calendar via Telegram
 cd src && python test_openrouter.py   # Test OpenRouter API (m2.7, m1, kimi, or all)
+cd src && python market_fetcher.py    # Test market data fetch
 ```
 
 ## GitHub Actions
 
-- `.github/workflows/daily_news.yml` - Daily digest at 6:00 UTC (cron + manual trigger)
-- `.github/workflows/weekly_news.yml` - Weekly digest (manual trigger only)
+- `.github/workflows/daily_news.yml` - Daily digest at 4:00 UTC (cron + manual trigger)
+- `.github/workflows/weekly_news.yml` - Weekly digest on Sunday 9:00 UTC (cron + manual trigger)
 
 ### Required Secrets
 
@@ -74,6 +76,27 @@ Available models in `test_openrouter.py`:
 - `minimax/minimax-m1` - 1M context window, more expensive
 - `moonshotai/kimi-k2.5` - Multimodal, good for image analysis
 
+### Market Data
+
+`market_fetcher.py` fetches via yfinance (no API key required):
+- DAX (^GDAXI), S&P 500 (^GSPC), EUR/USD (EURUSD=X)
+- Shows current price + daily % change with color indicators (🟢/🔴)
+- Only included in daily digest, not weekly
+
+### Weather & Pollen
+
+`weather_fetcher.py` provides:
+- Weather from wttr.in (temperature, feels-like, wind, humidity)
+- Pollen as single score 0-10 (not per-type list) with emoji indicator (🌼/🤧/😷)
+- DWD Region 111 (Oberrhein/unteres Neckartal) for Walldorf area
+
+### Calendar Features
+
+`calendar_fetcher.py` with special Sunday behavior:
+- **Mo-Sa**: Shows today's events only
+- **Sunday**: Shows today's events + weekly preview for upcoming week
+- German weekday names (Montag, Dienstag, etc.)
+
 ### Telegram Error Recovery
 
 `telegram_sender.py` handles 400 errors (often malformed markdown from LLM) with automatic retry using `parse_mode=None`. Splits messages >4096 chars with continuation markers. Validates `TELEGRAM_CHAT_IDS` non-empty at start of `send_telegram_message()`.
@@ -82,7 +105,8 @@ Available models in `test_openrouter.py`:
 
 - Fetches max 10 articles per feed, filters by publication date (24h daily, 168h weekly)
 - Deduplicates by lowercase title, sorts by date descending
-- Takes top 5 articles/category (daily) or 10 (weekly)
+- KI & Technologie: 8 articles (daily) / 14 (weekly) - reduced from 12/20
+- Other categories: 5 articles (daily) / 10 (weekly)
 - RSS feed categories: KI & Technologie, SAP, Deutsche Politik, Internationale Politik, Wirtschaft
 
 ## Common Issues
@@ -96,6 +120,8 @@ Available models in `test_openrouter.py`:
 **Markdown parsing errors**: Automatic fallback to plain text. If persistent, check prompt templates in `config.py` for invalid Telegram HTML syntax.
 
 **Calendar shows no events**: Service Account muss explizit zum Kalender eingeladen werden UND `CALENDAR_ID` muss die richtige Email-Adresse sein (nicht "primary").
+
+**Market data empty**: yfinance may fail outside market hours or on holidays. Returns "--" gracefully.
 
 ## Code Conventions
 
