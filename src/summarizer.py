@@ -40,14 +40,50 @@ def _get_weather() -> str:
         return "Wetter: Keine Daten verfügbar"
 
 
+def _get_markets() -> str:
+    """Get market data (DAX, S&P 500, EUR/USD)."""
+    try:
+        from market_fetcher import get_market_data
+        return get_market_data()
+    except Exception as e:
+        print(f"Error fetching market data: {e}")
+        return ""
+
+
 def _get_calendar(weekly: bool = False) -> str:
-    """Get calendar events for today or the week."""
+    """Get calendar events for today or the week.
+
+    On Sundays: automatically includes week preview alongside today's events.
+    """
     if not CALENDAR_ENABLED:
         print("  Calendar disabled (no credentials found)")
         return ""
     try:
         from calendar_fetcher import get_calendar_digest
-        result = get_calendar_digest(weekly=weekly)
+
+        is_sunday = datetime.now().weekday() == 6
+
+        if weekly:
+            # Weekly digest: nur Wochenübersicht
+            result = get_calendar_digest(weekly=True)
+        elif is_sunday:
+            # Sonntag: Tagesplan + Wochenvorschau
+            today = get_calendar_digest(weekly=False)
+            week = get_calendar_digest(weekly=True)
+
+            parts = []
+            if today:
+                parts.append(today)
+            if week:
+                # Ersetze "Termine diese Woche" mit "Vorschau kommende Woche"
+                week_preview = week.replace("📅 Termine diese Woche:", "📅 <b>Wochenvorschau:</b>")
+                parts.append(week_preview)
+
+            result = "\n\n".join(parts) if parts else ""
+        else:
+            # Normaler Tag: nur heute
+            result = get_calendar_digest(weekly=False)
+
         print(f"  Calendar result: {result[:50] if result else 'empty'}...")
         return result
     except Exception as e:
@@ -153,7 +189,8 @@ def curate_digest(summaries: str, weekly: bool = False) -> str:
     # Add weather forecast for daily digest
     if not weekly:
         weather = _get_weather()
-        timestamp = f"{timestamp}\n{weather}"
+        markets = _get_markets()
+        timestamp = f"{timestamp}\n{markets}\n{weather}"
 
     # Add calendar events
     calendar = _get_calendar(weekly=weekly)

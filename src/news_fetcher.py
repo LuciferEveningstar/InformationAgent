@@ -61,7 +61,7 @@ def fetch_all_news(hours: int = 24) -> Dict[str, List[dict]]:
 
         # More articles for weekly digest and for KI & Technologie category
         if category == "KI & Technologie":
-            max_articles = 20 if hours > 24 else 12
+            max_articles = 14 if hours > 24 else 8  # Reduziert von 20/12
         else:
             max_articles = 10 if hours > 24 else 5
         categorized_news[category] = unique_articles[:max_articles]

@@ -19,7 +19,10 @@ def get_weather_walldorf() -> str:
 
 
 def get_pollen_forecast() -> str:
-    """Fetch pollen forecast for Walldorf (Baden-Württemberg, Region 111) from DWD."""
+    """Fetch pollen forecast for Walldorf (Baden-Württemberg, Region 111) from DWD.
+
+    Returns a simple 0-10 score instead of detailed list.
+    """
     try:
         # DWD OpenData - kostenlose Pollenflug-Daten
         url = "https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json"
@@ -38,35 +41,51 @@ def get_pollen_forecast() -> str:
                 break
 
         if not region_data:
-            return "Pollenflug: Keine Daten verfügbar"
+            return "🌼 Pollen: ?"
 
         pollen_data = region_data.get("Pollen", {})
 
-        # Mapping von Belastungsstufen
-        level_map = {
-            "0": "keine",
-            "0-1": "keine-gering",
-            "1": "gering",
-            "1-2": "gering-mittel",
-            "2": "mittel",
-            "2-3": "mittel-hoch",
-            "3": "hoch"
+        # Belastungsstufen zu numerischen Werten (0-3 Skala der DWD)
+        level_to_num = {
+            "0": 0,
+            "0-1": 0.5,
+            "1": 1,
+            "1-2": 1.5,
+            "2": 2,
+            "2-3": 2.5,
+            "3": 3
         }
 
-        # Sammle nur relevante Pollen (Belastung > 0)
-        active_pollen = []
-        for pollen_type, values in pollen_data.items():
+        # Sammle alle Belastungswerte
+        levels = []
+        for values in pollen_data.values():
             today_level = values.get("today", "0")
-            if today_level != "0":
-                level_text = level_map.get(today_level, today_level)
-                active_pollen.append(f"{pollen_type}: {level_text}")
+            num_level = level_to_num.get(today_level, 0)
+            levels.append(num_level)
 
-        if active_pollen:
-            return "🌼 Pollenflug heute: " + ", ".join(active_pollen)
+        if not levels:
+            return "🌼 Pollen: 0/10"
+
+        # Gesamtbelastung: Höchstwert + Durchschnitt kombiniert, auf 0-10 skaliert
+        max_level = max(levels)
+        avg_level = sum(levels) / len(levels)
+
+        # Formel: 60% Höchstwert + 40% Durchschnitt, dann auf 0-10 skalieren (DWD max ist 3)
+        combined = (max_level * 0.6 + avg_level * 0.4)
+        score = round(combined * 10 / 3)  # Skaliere von 0-3 auf 0-10
+        score = min(10, max(0, score))  # Clamp auf 0-10
+
+        # Emoji basierend auf Belastung
+        if score <= 2:
+            emoji = "🌼"
+        elif score <= 5:
+            emoji = "🤧"
         else:
-            return "🌼 Pollenflug: Keine Belastung"
+            emoji = "😷"
+
+        return f"{emoji} Pollen: {score}/10"
 
     except Exception as e:
         print(f"Error fetching pollen data: {e}")
-        return "Pollenflug: Keine Daten verfügbar"
+        return "🌼 Pollen: ?"
 

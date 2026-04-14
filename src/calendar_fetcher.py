@@ -116,6 +116,12 @@ def format_event_time(event: dict) -> str:
     return ""
 
 
+def _format_weekday(dt: datetime) -> str:
+    """Formatiert Wochentag auf Deutsch."""
+    weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+    return weekdays[dt.weekday()]
+
+
 def format_event_for_digest(event: dict) -> str:
     """Formatiert ein einzelnes Event für den Digest."""
     time = format_event_time(event)
@@ -155,7 +161,7 @@ def get_calendar_digest(weekly: bool = False) -> Optional[str]:
 
             try:
                 event_date = datetime.fromisoformat(date_str)
-                day_name = event_date.strftime("%A, %d.%m.")  # z.B. "Montag, 08.04."
+                day_name = f"{_format_weekday(event_date)}, {event_date.strftime('%d.%m.')}"
             except:
                 day_name = date_str
 
