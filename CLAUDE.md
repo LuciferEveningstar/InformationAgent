@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Daily news agent that fetches articles from RSS feeds, summarizes them with Google Gemini AI, and sends curated digests via Telegram. Includes optional Google Calendar integration for daily agenda. Runs automatically via GitHub Actions at 6:00 UTC daily.
+Daily news agent that fetches articles from RSS feeds, summarizes them with OpenRouter API (MiniMax M2.7), and sends curated digests via Telegram. Includes optional Google Calendar integration for daily agenda. Runs automatically via GitHub Actions at 6:00 UTC daily.
 
 ## Architecture
 
@@ -13,17 +13,17 @@ Five-stage pipeline orchestrated by `src/main.py`:
 1. **News Fetching** (`news_fetcher.py`) - Parallel RSS feed fetching with ThreadPoolExecutor, deduplication, date filtering
 2. **Weather & Pollen** (`weather_fetcher.py`) - wttr.in for weather, DWD OpenData for pollen forecast (Walldorf region)
 3. **Calendar** (`calendar_fetcher.py`) - Google Calendar API via Service Account, shows today's events
-4. **Summarization** (`summarizer.py`) - Gemini API calls with automatic model fallback on rate limits
+4. **Summarization** (`summarizer.py`) - OpenRouter API (MiniMax M2.7) with retry logic
 5. **Delivery** (`telegram_sender.py`) - Telegram Bot API with automatic HTML fallback on 400 errors
 
-Configuration in `config.py`: API keys, RSS feed categories, Gemini models, prompts (summary/curation/weekly), calendar settings.
+Configuration in `config.py`: API keys, RSS feed categories, OpenRouter model, prompts (summary/curation/weekly), calendar settings.
 
 ## Running Locally
 
 ```bash
 # Setup
 cp .env.example .env
-# Edit .env with actual keys: GOOGLE_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_IDS
+# Edit .env with actual keys: OPENROUTER_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_IDS
 
 # Install dependencies
 pip install -r requirements.txt
@@ -40,6 +40,7 @@ cd src && python summarizer.py        # Fetch + summarize
 cd src && python telegram_sender.py   # Send test message
 cd src && python calendar_fetcher.py  # Test calendar (requires service_account.json)
 cd src && python test_calendar.py     # Send calendar via Telegram
+cd src && python test_openrouter.py   # Test OpenRouter API (m2.7, m1, kimi, or all)
 ```
 
 ## GitHub Actions
@@ -51,7 +52,7 @@ cd src && python test_calendar.py     # Send calendar via Telegram
 
 | Secret | Beschreibung |
 |--------|--------------|
-| `GOOGLE_API_KEY` | Gemini API Key |
+| `OPENROUTER_API_KEY` | OpenRouter API Key (sk-or-v1-...) |
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot Token |
 | `TELEGRAM_CHAT_ID` | Telegram Chat ID(s) |
 | `GOOGLE_CALENDAR_CREDENTIALS` | Service Account JSON (optional, für Kalender) |
@@ -60,12 +61,18 @@ Note: Use singular `TELEGRAM_CHAT_ID` in GitHub secrets, but code supports `TELE
 
 ## Critical Implementation Details
 
-### Gemini Rate Limit Handling
+### OpenRouter API
 
-Free tier has 20 requests/day per model. `summarizer.py` implements automatic fallback chain:
-1. `gemini-2.5-flash` → 2. `gemini-2.5-flash-lite` → 3. `gemini-3-flash` → 4. `gemini-3.1-flash-lite`
+Uses MiniMax M2.7 as default model (`OPENROUTER_MODEL` in config). Key considerations:
+- MiniMax M2.7 is a reasoning model - uses internal "thinking" tokens before responding
+- `max_tokens=8000` ensures enough room for reasoning + response
+- Pricing: $0.30/M input, $1.20/M output (~$0.005 per full digest)
+- Retry logic with exponential backoff on 429 errors
 
-Global `_current_model_index` persists across API calls within same run. On 429/RESOURCE_EXHAUSTED: retries 3x with exponential backoff (10s, 20s, 30s), then switches to next model.
+Available models in `test_openrouter.py`:
+- `minimax/minimax-m2.7` (default) - Best price/performance for news summaries
+- `minimax/minimax-m1` - 1M context window, more expensive
+- `moonshotai/kimi-k2.5` - Multimodal, good for image analysis
 
 ### Telegram Error Recovery
 
@@ -82,7 +89,9 @@ Global `_current_model_index` persists across API calls within same run. On 429/
 
 **Empty chat ID list**: Code now fails fast with explicit error. Check `TELEGRAM_CHAT_IDS` in `.env` or `TELEGRAM_CHAT_ID` in GitHub secrets.
 
-**Rate limit exhaustion**: All 4 Gemini models depleted = exception thrown. Occurs if >20 requests/model used that day. Wait 24h or use paid API.
+**OpenRouter rate limit**: Automatic retry with exponential backoff (10s, 20s, 30s). If persistent, check API quota at openrouter.ai.
+
+**None response from model**: Usually means `max_tokens` too low for reasoning models. Current setting (8000) should be sufficient.
 
 **Markdown parsing errors**: Automatic fallback to plain text. If persistent, check prompt templates in `config.py` for invalid Telegram HTML syntax.
 
