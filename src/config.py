@@ -6,12 +6,16 @@ load_dotenv()
 # API Keys
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # Telegram Chat IDs - kommagetrennt für mehrere Empfänger
 _chat_ids_raw = os.getenv("TELEGRAM_CHAT_IDS", os.getenv("TELEGRAM_CHAT_ID", ""))
 TELEGRAM_CHAT_IDS = [cid.strip() for cid in _chat_ids_raw.split(",") if cid.strip()]
 
-# Gemini Models (kostenlose Modelle) - Fallback-Reihenfolge bei Rate Limits
+# OpenRouter Modell (primär)
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "minimax/minimax-m2.7")
+
+# Gemini Models (Fallback) - Reihenfolge bei Rate Limits
 GEMINI_MODELS = [
     "models/gemini-2.5-flash",
     "models/gemini-2.5-flash-lite",

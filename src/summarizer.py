@@ -1,11 +1,10 @@
 import time
+import requests
 from datetime import datetime
-from google import genai
-from google.genai import types
 from typing import Dict, List
 from config import (
-    GOOGLE_API_KEY,
-    GEMINI_MODELS,
+    OPENROUTER_API_KEY,
+    OPENROUTER_MODEL,
     SUMMARY_PROMPT,
     CURATE_PROMPT,
     WEEKLY_PROMPT,
@@ -13,25 +12,8 @@ from config import (
 )
 from news_fetcher import format_articles_for_summary
 
-client = genai.Client(api_key=GOOGLE_API_KEY)
-
-# Track which model to use (persists across calls within same run)
-_current_model_index = 0
-
-
-def _get_current_model() -> str:
-    """Get the current model to use."""
-    return GEMINI_MODELS[_current_model_index]
-
-
-def _switch_to_next_model() -> bool:
-    """Switch to next fallback model. Returns False if no more models available."""
-    global _current_model_index
-    if _current_model_index < len(GEMINI_MODELS) - 1:
-        _current_model_index += 1
-        print(f"  Switching to fallback model: {GEMINI_MODELS[_current_model_index]}")
-        return True
-    return False
+# OpenRouter API Endpoint
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 def _get_timestamp(weekly: bool = False) -> str:
@@ -73,51 +55,70 @@ def _get_calendar(weekly: bool = False) -> str:
         return ""
 
 
-def _generate_with_retry(prompt: str, max_retries: int = 3) -> str:
-    """Generate content with retry logic and model fallback for rate limits."""
-    global _current_model_index
+def _generate_with_openrouter(prompt: str, max_retries: int = 3) -> str:
+    """Generate content using OpenRouter API with retry logic."""
+    if not OPENROUTER_API_KEY:
+        raise ValueError("OPENROUTER_API_KEY nicht konfiguriert!")
 
-    while True:
-        model = _get_current_model()
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(
+                url=OPENROUTER_URL,
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "HTTP-Referer": "https://github.com/InformationAgent",
+                    "X-OpenRouter-Title": "InformationAgent News Bot",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": OPENROUTER_MODEL,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 8000,  # Reasoning-Modelle brauchen mehr Tokens
+                },
+                timeout=120,
+            )
 
-        for attempt in range(max_retries):
-            try:
-                response = client.models.generate_content(
-                    model=model,
-                    contents=prompt,
-                )
-                if response.text:
-                    return response.text
-                raise ValueError("Empty response from API")
-            except Exception as e:
-                error_str = str(e)
-                is_rate_limit = "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
+            if response.status_code == 200:
+                data = response.json()
+                content = data["choices"][0]["message"]["content"]
 
-                if is_rate_limit:
-                    if attempt < max_retries - 1:
-                        wait_time = 10 * (attempt + 1)
-                        print(f"  Rate limited on {model}, waiting {wait_time}s...")
-                        time.sleep(wait_time)
-                    else:
-                        # All retries exhausted, try next model
-                        if _switch_to_next_model():
-                            break  # Break inner loop, continue outer while
-                        else:
-                            raise Exception(f"All models exhausted. Last error: {e}")
+                if content:
+                    # Log token usage
+                    usage = data.get("usage", {})
+                    print(f"  [{OPENROUTER_MODEL}] Tokens: {usage.get('total_tokens', 'N/A')}")
+                    return content
                 else:
-                    raise e
-        else:
-            # Inner for-loop completed without break = success or non-rate-limit error
-            # This shouldn't be reached due to return/raise above, but just in case
-            continue
-        # Break from inner loop means we switched models, continue trying
-        continue
+                    raise ValueError("Leere Antwort von API")
 
-    return ""
+            elif response.status_code == 429:
+                # Rate limit - warten und retry
+                wait_time = 10 * (attempt + 1)
+                print(f"  Rate limited, waiting {wait_time}s...")
+                time.sleep(wait_time)
+                continue
+
+            else:
+                error_msg = response.text[:200]
+                raise Exception(f"API Error {response.status_code}: {error_msg}")
+
+        except requests.exceptions.Timeout:
+            if attempt < max_retries - 1:
+                print(f"  Timeout, retry {attempt + 2}/{max_retries}...")
+                continue
+            raise Exception("Request Timeout nach allen Versuchen")
+
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"  Error: {e}, retry {attempt + 2}/{max_retries}...")
+                time.sleep(5)
+                continue
+            raise
+
+    raise Exception("Alle Versuche fehlgeschlagen")
 
 
 def summarize_category(category: str, articles: List[dict]) -> str:
-    """Summarize articles in a category using Gemini Flash."""
+    """Summarize articles in a category using OpenRouter."""
     if not articles:
         return f"**{category}**\nKeine aktuellen Nachrichten in dieser Kategorie.\n"
 
@@ -125,7 +126,7 @@ def summarize_category(category: str, articles: List[dict]) -> str:
     prompt = SUMMARY_PROMPT.format(articles=articles_text)
 
     try:
-        response = _generate_with_retry(prompt)
+        response = _generate_with_openrouter(prompt)
         return f"**{category}**\n{response}\n"
     except Exception as e:
         print(f"Error summarizing {category}: {e}")
@@ -140,12 +141,12 @@ def summarize_all_categories(categorized_news: Dict[str, List[dict]]) -> str:
         print(f"Summarizing {category}...")
         summary = summarize_category(category, articles)
         summaries.append(summary)
-        time.sleep(5)  # Longer rate limit buffer
+        time.sleep(2)  # Rate limit buffer
     return "\n".join(summaries)
 
 
 def curate_digest(summaries: str, weekly: bool = False) -> str:
-    """Create the final curated digest using Gemini Pro."""
+    """Create the final curated digest using OpenRouter."""
     prompt_template = WEEKLY_PROMPT if weekly else CURATE_PROMPT
     timestamp = _get_timestamp(weekly)
 
@@ -162,7 +163,7 @@ def curate_digest(summaries: str, weekly: bool = False) -> str:
     prompt = prompt_template.format(summaries=summaries, timestamp=timestamp)
 
     try:
-        response = _generate_with_retry(prompt)
+        response = _generate_with_openrouter(prompt)
         return response
     except Exception as e:
         print(f"Error curating digest: {e}")
