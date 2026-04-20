@@ -2,17 +2,41 @@ import requests
 
 
 def get_weather_walldorf() -> str:
-    """Fetch weather forecast for Walldorf (69190) using wttr.in."""
+    """Fetch daily weather forecast for Walldorf using wttr.in JSON API."""
     try:
-        # wttr.in provides free weather data without API key
-        # format=3 gives compact output like "Walldorf: ⛅️ +15°C"
-        # ?m forces metric units (Celsius)
-        url = "https://wttr.in/Walldorf,Germany?m&format=%l:+%c+%t+(gefühlt:+%f),+%w,+%h"
+        # JSON format gives structured data with daily min/max temps
+        url = "https://wttr.in/Walldorf,Germany?format=j1"
         response = requests.get(url, timeout=10)
         response.raise_for_status()
 
-        weather_info = response.text.strip()
-        return weather_info
+        data = response.json()
+        today = data["weather"][0]
+        current = data["current_condition"][0]
+
+        max_temp = today["maxtempC"]
+        min_temp = today["mintempC"]
+        condition = current["weatherDesc"][0]["value"]
+        humidity = current["humidity"]
+        wind_kmph = current["windspeedKmph"]
+
+        # Wetter-Emoji basierend auf Condition
+        condition_lower = condition.lower()
+        if "sun" in condition_lower or "clear" in condition_lower:
+            emoji = "☀️"
+        elif "cloud" in condition_lower or "overcast" in condition_lower:
+            emoji = "☁️"
+        elif "rain" in condition_lower or "drizzle" in condition_lower:
+            emoji = "🌧️"
+        elif "snow" in condition_lower:
+            emoji = "❄️"
+        elif "thunder" in condition_lower:
+            emoji = "⛈️"
+        elif "fog" in condition_lower or "mist" in condition_lower:
+            emoji = "🌫️"
+        else:
+            emoji = "🌤️"
+
+        return f"Walldorf: {emoji} bis {max_temp}°C (min {min_temp}°C), {wind_kmph}km/h, {humidity}%"
     except Exception as e:
         print(f"Error fetching weather: {e}")
         return "Wetter: Keine Daten verfügbar"
